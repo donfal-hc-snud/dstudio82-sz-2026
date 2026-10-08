@@ -4,15 +4,15 @@ An openFrameworks 0.12.1 animation. Two red and blue points orbit the center of 
 
 ## Run on macOS
 
-1. In your openFrameworks 0.12.1 installation, create a new project called `spiralTrails` in `apps/myApps` with the openFrameworks Project Generator.
-2. Move the generated placeholder `src` directory aside, then link the project's `src` to this repository's `src`. That keeps edits made in Cursor inside Git:
+Install Xcode, then clone this repository on your Mac and run the setup script from Terminal:
 
-   ```bash
-   mv /path/to/openFrameworks/apps/myApps/spiralTrails/src /path/to/openFrameworks/apps/myApps/spiralTrails/src.generated-backup
-   ln -s /path/to/dstudio82-sz-2026/src /path/to/openFrameworks/apps/myApps/spiralTrails/src
-   ```
+```bash
+git clone https://github.com/donfal-hc-snud/dstudio82-sz-2026.git ~/Documents/dstudio82-sz-2026
+bash ~/Documents/dstudio82-sz-2026/scripts/setup-macos.sh
+```
 
-   Replace both example paths with the actual paths on your Mac. Run the commands only after creating a fresh project.
-3. Open this repository in Cursor to edit the source. Open the generated `.xcodeproj` in Xcode to build and run the app. The openFrameworks release and its project files remain outside this repository.
+If the repository is already cloned, update it with `git pull --ff-only` there and run the script. The script uses `/Users/donfal/Documents/openFrameworks/of_v0.12.1_osx_release` as the default openFrameworks path; set `OF_ROOT` to override it. It generates `apps/myApps/spiralTrails` with the bundled Project Generator, links the project's `src` to this Git checkout, builds with Xcode, opens the source in Cursor and the Xcode project, and launches the built app when found. Otherwise press Command-R in Xcode to run it. If the command-line Project Generator is absent, create `spiralTrails` with its GUI and rerun the script.
+
+Open the Git checkout in Cursor to edit the source. The openFrameworks release and generated Xcode files remain outside this repository; the authored source and setup script are tracked here.
 
 The animation runs continuously. Resize the window to any desired dimensions; the orbit stays centered and the visible trail length adapts to the new height.
