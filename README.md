@@ -1,6 +1,6 @@
 # Spiral Trails
 
-An openFrameworks 0.12.1 animation. Two red and blue points orbit the center of a resizable window. Their history drifts downward, forming two intertwined spiral trails. The initial window size is 600 × 600 pixels.
+An openFrameworks 0.12.1 animation. Two red and blue points orbit a vertical axis in 3D. Their history descends to form two intertwined spiral trails. The initial window size is 600 × 600 pixels and remains resizable. Hold the left mouse button and drag to rotate the view around the spirals.
 
 ## Run on macOS
 
@@ -15,4 +15,4 @@ If the repository is already cloned, update it with `git pull --ff-only` there a
 
 Open the Git checkout in Cursor to edit the source. The openFrameworks release and generated Xcode files remain outside this repository; the authored source and setup script are tracked here.
 
-The animation runs continuously. Resize the window to any desired dimensions; the orbit stays centered and the visible trail length adapts to the new height.
+The animation runs continuously. Resize the window to any desired dimensions; the orbit stays centered and the visible trail length adapts to the new height. Left-drag rotates the camera; releasing the button stops the rotation.
