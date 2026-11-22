@@ -1,3 +1,13 @@
+# RhythmicVisual v11 — Web
+
+최종 v11의 HTML / Three.js 웹 버전은 [`v11/`](./v11/)에 있습니다. 기존 openFrameworks Spiral Trails 소스는 보존했습니다.
+
+Vercel 프로젝트 이름: `rhythm-visualiser` · Root Directory: `v11` · Build: `npm run build` · Output: `dist`.
+
+로컬 실행과 기능·검증 내용은 [v11 안내](./v11/README.md)를 확인하세요.
+
+---
+
 # Spiral Trails
 
 An openFrameworks 0.12.1 animation. Two red and blue points orbit a vertical axis in 3D. Their history descends to form two intertwined spiral trails. The initial window size is 600 × 600 pixels and remains resizable. Hold the left mouse button and drag to rotate the view around the spirals.

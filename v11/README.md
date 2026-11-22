@@ -1,0 +1,67 @@
+# RhythmicVisual v11 — Web
+
+최종 openFrameworks **v11**을 브라우저용 HTML/CSS/JavaScript + Three.js/WebGL 2로 옮긴 독립 프로젝트입니다. OF v12와 다르며, 원본 OF의 소스·셰이더·소리는 수정하지 않습니다. 서버 계산/API 키/DB가 없는 정적 사이트여서 Vercel에서 호스팅할 수 있습니다.
+
+## 실행
+
+Node.js 20 이상에서, **이 폴더(`v11`) 안에서** 실행합니다.
+
+```sh
+npm run dev
+```
+
+브라우저에서 `http://127.0.0.1:5173`을 엽니다. macOS에서는 `./run.sh`도 사용할 수 있습니다. `index.html`을 file://로 직접 열면 모듈·셰이더·오디오 로딩이 차단되므로 HTTP 서버를 사용해야 합니다.
+
+```sh
+npm test
+npm run build
+```
+
+프로덕션 산출물은 `dist/`입니다. 프로덕션 파일을 로컬에서 확인하려면 `node scripts/serve.mjs --dist`를 사용합니다. 프로덕션 코드는 npm 설치 없이 빌드되며, Three.js 0.187.0과 OrbitControls를 `public/vendor/`에 라이선스와 함께 포함했습니다. 런타임 CDN 요청은 없습니다.
+
+## Vercel 배포
+
+Vercel 프로젝트 이름은 `rhythm-visualiser`를 사용합니다. GitHub 저장소의 `v11/`에 포함된 독립 웹 앱입니다.
+
+1. 이 저장소를 Import하고 Vercel의 **Root Directory를 `v11`로 지정**합니다. OF 전체 앱을 배포 대상으로 선택하지 않습니다.
+2. Vercel에서 저장소를 Import합니다.
+3. Framework Preset: **Other**, Build Command: **npm run build**, Output Directory: **dist**, Node.js: **20 이상 지원 버전**.
+4. 환경변수는 필요 없습니다. Deploy 후 생성되는 `*.vercel.app` URL에서 실행합니다.
+
+`vercel.json`에 빌드·출력 폴더를 설정했습니다. CLI를 사용하는 경우 이 디렉터리에서 원하는 Vercel 계정·프로젝트에 연결한 뒤 `vercel deploy`로 미리보기, 확인 후 `vercel --prod`로 공개합니다. 기존에 연결된 프로젝트가 있다면 배포 대상을 먼저 확인합니다.
+
+## v11에서 유지한 기능
+
+- 분자÷분모 내림차순 박자: 40/2, 24/2, 40/4, 20/2, 24/3, 16/4, 12/3, 8/4, 6/3, 4/4. 기본 **12/3**.
+- 소박은 정확히 1/3초. 루프 길이는 분자/3초. `performance.now()` 기반 절대 시간 사용.
+- 빈 rhythm은 분모 반복. 문자열은 1~6의 양의 정수이고 합계는 현재 분자. Enter/Apply는 **다음 루프 경계**에 적용하며 오류 입력은 현재·예약 재생을 보존합니다.
+- Space와 Tap rhythm: 현재 카운트 저장,6 자동저장,남은 소박 자동완성,경계 예약. 텍스트·드롭다운·버튼 포커스 중 전역 단축키 차단, 키 반복 중복 방지.
+- 평면 반원과 연결된 HELIX, 초기 순차 그리기, 현재 커브만 이동 갭, 과거 커브는 완성 상태 고정. OF의 속도·호 길이·갭 수식 이식.
+- SHIFT RIGHT / ARC, 로컬 P.y 후 Z 회전, P.x/P.z/degree. 최대8 리듬 × (현재1 + 과거8) =72세트. 모든 레이어 opacity1.
+- 히스토리 잠시 숨김/복원, 현재 히스토리 Clear, Clear all, 세트별 고정 랜덤 컬러.
+- 원근·정투영, 드래그 회전, 우클릭 패닝, 휠/터치 줌, Camera Default/R.
+- Directional / v3 Radial / Area: One side / Area: Alternating. 소스의 로컬 N 방향, 부드러운 cone, 3D capsule BVH 기반 reveal-aware 충돌, Screen 스펙트럼 합성, ADD 코어·글로우. 원본 GLSL의 WebGL 2 포트.
+- opacity1/3, spread200, softness1, P.x3, P.y−5, P.z5/3, degree5. spectrum resolution0.1~0.5, 내부 최대1920×1080, 지원 범위 내 MSAA최대4x와 소스 경계 AA·큐빅 확대 보간.
+- F4F4F4 반전, 밝기에 반응하는 세리프 박자 표기, 박자 밑 탭 숫자·완성 후4초 fade.
+- Orthographic / Perspectively SVG: 현재 reveal/gap·배치·히스토리 숨김 반영. 단색 커브만1920×1080에 비율 유지하여 다운로드. Perspective는 현재 카메라·intrinsic Z·P.z를 보존합니다. 카메라·모델은 변경하지 않습니다.
+- SOUNDs의 원본17 WAV 포함. 징은 루프 경계마다 원본 속도로 재생하며, 긴 파일은 루프 끝에서5ms fade 후 종료, 짧은 파일은 자연 종료. 기본 징ON·리듬MUTE·볼륨0.5. 기본 리듬의 첫 사운드 선택은3A/3B/3C/3D. 같은 리듬의 반복 동안 선택된 소리 세트를 유지합니다.
+
+## 브라우저에 맞춘 차이와 제한
+
+- 오디오는 브라우저 정책상 **Enable sound**를 눌러야 활성화됩니다. 소리 로딩 후 다음 루프 경계부터 예약합니다. 별도의 Web Audio 시간축과25ms 스케줄러/180ms lookahead를 사용해 렌더 프레임과 분리했습니다. 탭을 백그라운드로 보내거나 OS가 앱을 중단할 때의 오디오 동작은 브라우저 정책에 영향을 받습니다.
+- 원본 UI를 HTML 컨트롤로 재구성했습니다. 휴대폰에서는 Controls로 패널을 열고 닫습니다. 모바일 크기는 데스크톱 Chrome 에뮬레이션으로 검증했으며, 실제 iOS/Safari·Android 기기 검증은 수행하지 않았습니다.
+- Palette Gear는 지원 데스크톱 브라우저의 **Web Serial**과 HTTPS/localhost가 필요합니다. Connect Palette Gear에서 사용자가 장치를 선택해야 합니다. 원본 USB VID/PID와 JSON 프로토콜을 이식했으나 물리 장치 연결은 검증하지 않았습니다. 미지원 브라우저에는 버튼이 표시되지 않습니다.
+- 메인 폰트는 시스템 Georgia/Times/serif를 사용합니다. macOS 전용 폰트를 재배포하지 않습니다.
+- WebGL 2가 필요합니다. GPU의 부동소수점 렌더 타깃·MSAA 지원에 따라 화질/속도는 달라집니다. 결과는 네이티브 픽셀 단위 동일성을 보장하지 않으며, Radial 프로필과 하드웨어 필터링에 미세한 차이가 있습니다.
+- SVG는 브라우저 다운로드 방식입니다. 카메라 쪽으로 투영된 전체 배치를 fit하며, UI에 가려진 부분도 포함합니다. 웹 SVG는 캐시된 폴리라인을 벡터 path로 내보내며, OF의 평면 SVG에서 쓰던 정확한 A 원호 명령과는 파일 구조가 다릅니다.
+- 공개용 파일에는 원본과 테스트 데이터를 포함하지 않습니다. 초기 로딩은 로컬 Three.js·앱·셰이더만 사용하고, 소리 파일 약3.2MB는 오디오 활성화 때 로드합니다.
+
+## 검증
+
+- `npm test`: 모든20개 평면/HELIX 박자 조합을 실제 C++ v11 좌표·노멀·birth time과2e−8 오차로 비교합니다. 탭·예약/오류 보존·프레임 드롭·갭·최대72·색 안정성·Palette 프로토콜도 검증합니다.
+- `tests/native-fixture.cpp`는 실제 `versions/v11/`에서 `native-fixture.json`을 생성하는 도구입니다. 배포 산출물에는 포함되지 않습니다.
+- `tests/browser.mjs`: Playwright + Chrome으로 실제 WebGL을 실행하고 Enter 예약, 네 스펙트럼 모드, flat/helix, ARC, 양 카메라, 흰색/검은색 × 밝기0/0.2/0.5/1, 히스토리 토글, SVG 다운로드,17소리 로딩, 모바일 크기,1920×1080 상한을 확인합니다.
+- `tests/stress-browser.mjs`: 최대72세트에서 정적 히스토리 메시가 매 프레임 재구축되지 않는지 확인합니다. 점검용 저해상도 설정을 사용하며 모든 관객 기기의 프레임 속도를 보장하는 벤치마크는 아닙니다.
+- 브라우저 테스트는 선택 개발 도구인 Playwright와 Chrome 설치가 필요합니다. `PLAYWRIGHT_MODULE`로 설치된 Playwright의 `index.mjs` 경로를 지정하거나 로컬 패키지로 설치할 수 있습니다. 개발 서버가 실행 중일 때 실행하며 `TEST_URL`로 대상URL을 지정할 수 있습니다.
+
+원본 OF 실행은 상위 폴더의 기존 `./run.sh`를 계속 사용합니다. 웹 실행은 **이 폴더의** `./run.sh`입니다.
