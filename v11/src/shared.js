@@ -2,9 +2,10 @@ import { galleryLoop, emptyGallery } from './shared-model.js';
 
 const queueKey = 'rhythm-gallery-pending-v1';
 export class SharedGallery {
-  constructor(loop, status) {
+  constructor(loop, status, onRestore = () => {}) {
     this.loop = loop;
     this.status = status;
+    this.onRestore = onRestore;
     this.gallery = emptyGallery();
     this.cache = new Map();
     this.ownedIds = new Set();
@@ -26,7 +27,10 @@ export class SharedGallery {
     this.sync();
   }
   accept(gallery) {
-    if (gallery.version === 1 && gallery.sequence >= this.gallery.sequence) this.gallery = gallery;
+    if (gallery.version !== 1 || gallery.sequence < this.gallery.sequence) return;
+    const firstRestore = this.gallery.sequence === 0 && gallery.sequence > 0;
+    this.gallery = gallery;
+    if (firstRestore) this.onRestore();
   }
   async sync() {
     if (this.busy || document.hidden) return;

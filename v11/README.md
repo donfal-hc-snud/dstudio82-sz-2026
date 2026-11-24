@@ -1,6 +1,6 @@
 # RhythmicVisual v11 — Web
 
-최종 openFrameworks **v11**을 브라우저용 HTML/CSS/JavaScript + Three.js/WebGL 2로 옮긴 독립 프로젝트입니다. OF v12와 다르며, 원본 OF의 소스·셰이더·소리는 수정하지 않습니다. 서버 계산/API 키/DB가 없는 정적 사이트여서 Vercel에서 호스팅할 수 있습니다.
+최종 openFrameworks **v11**을 브라우저용 HTML/CSS/JavaScript + Three.js/WebGL 2로 옮긴 독립 프로젝트입니다. OF v12와 다르며, 원본 OF의 소스·셰이더·소리는 수정하지 않습니다. Vercel Functions와 private Blob 저장소로 모든 접속자의 리듬 기록을 보존합니다.
 
 ## 실행
 
@@ -37,7 +37,7 @@ Vercel 프로젝트 이름은 `rhythm-visualiser`를 사용합니다. GitHub 저
 - 빈 rhythm은 분모 반복. 문자열은 1~6의 양의 정수이고 합계는 현재 분자. Enter/Apply는 **다음 루프 경계**에 적용하며 오류 입력은 현재·예약 재생을 보존합니다.
 - Space와 Tap rhythm: 현재 카운트 저장,6 자동저장,남은 소박 자동완성,경계 예약. 텍스트·드롭다운·버튼 포커스 중 전역 단축키 차단, 키 반복 중복 방지.
 - 평면 반원과 연결된 HELIX, 초기 순차 그리기, 현재 커브만 이동 갭, 과거 커브는 완성 상태 고정. OF의 속도·호 길이·갭 수식 이식.
-- SHIFT RIGHT / ARC, 로컬 P.y 후 Z 회전, P.x/P.z/degree. 최대8 리듬 × (현재1 + 과거8) =72세트. 모든 레이어 opacity1.
+- SHIFT RIGHT / ARC, 로컬 P.y 후 Z 회전, P.x/P.z/degree. 최대8 리듬 × (현재1 + 과거8) =64세트. 모든 레이어 opacity1.
 - 히스토리 잠시 숨김/복원, 현재 히스토리 Clear, Clear all, 세트별 고정 랜덤 컬러.
 - 원근·정투영, 드래그 회전, 우클릭 패닝, 휠/터치 줌, Camera Default/R.
 - Directional / v3 Radial / Area: One side / Area: Alternating. 소스의 로컬 N 방향, 부드러운 cone, 3D capsule BVH 기반 reveal-aware 충돌, Screen 스펙트럼 합성, ADD 코어·글로우. 원본 GLSL의 WebGL 2 포트.
@@ -58,10 +58,18 @@ Vercel 프로젝트 이름은 `rhythm-visualiser`를 사용합니다. GitHub 저
 
 ## 검증
 
-- `npm test`: 모든20개 평면/HELIX 박자 조합을 실제 C++ v11 좌표·노멀·birth time과2e−8 오차로 비교합니다. 탭·예약/오류 보존·프레임 드롭·갭·최대72·색 안정성·Palette 프로토콜도 검증합니다.
+- `npm test`: 모든20개 평면/HELIX 박자 조합을 실제 C++ v11 좌표·노멀·birth time과2e−8 오차로 비교합니다. 탭·예약/오류 보존·프레임 드롭·갭·최대64·색 안정성·Palette 프로토콜도 검증합니다.
 - `tests/native-fixture.cpp`는 실제 `versions/v11/`에서 `native-fixture.json`을 생성하는 도구입니다. 배포 산출물에는 포함되지 않습니다.
 - `tests/browser.mjs`: Playwright + Chrome으로 실제 WebGL을 실행하고 Enter 예약, 네 스펙트럼 모드, flat/helix, ARC, 양 카메라, 흰색/검은색 × 밝기0/0.2/0.5/1, 히스토리 토글, SVG 다운로드,17소리 로딩, 모바일 크기,1920×1080 상한을 확인합니다.
-- `tests/stress-browser.mjs`: 최대72세트에서 정적 히스토리 메시가 매 프레임 재구축되지 않는지 확인합니다. 점검용 저해상도 설정을 사용하며 모든 관객 기기의 프레임 속도를 보장하는 벤치마크는 아닙니다.
+- `tests/stress-browser.mjs`: 최대64세트에서 정적 히스토리 메시가 매 프레임 재구축되지 않는지 확인합니다. 점검용 저해상도 설정을 사용하며 모든 관객 기기의 프레임 속도를 보장하는 벤치마크는 아닙니다.
 - 브라우저 테스트는 선택 개발 도구인 Playwright와 Chrome 설치가 필요합니다. `PLAYWRIGHT_MODULE`로 설치된 Playwright의 `index.mjs` 경로를 지정하거나 로컬 패키지로 설치할 수 있습니다. 개발 서버가 실행 중일 때 실행하며 `TEST_URL`로 대상URL을 지정할 수 있습니다.
 
 원본 OF 실행은 상위 폴더의 기존 `./run.sh`를 계속 사용합니다. 웹 실행은 **이 폴더의** `./run.sh`입니다.
+
+## Shared gallery
+
+적용된 리듬은 서버에 영구 기록하며 화면에는 최신 가로 8세트 × 깊이 8개(현재 커브 포함)를 표시합니다. 박자가 바뀌면 새 가로 세트를 만들고 같은 박자의 입력은 깊이에 쌓습니다. 5초마다 다른 접속자의 기록을 읽습니다. 잘못된 입력과 반복 애니메이션은 새 기록을 만들지 않습니다.
+
+`api/traces.js`는 서버 전용 `BLOB_READ_WRITE_TOKEN`을 사용합니다. 각 입력은 `archive/`에 불변 JSON으로 저장하며 표시용 인덱스는 ETag 조건부 쓰기로 동시에 들어온 기록을 합칩니다. Preview는 별도의 `preview/` 경로를 사용합니다. 입력 오류·네트워크 단절 시 저장 대기를 표시하고 브라우저에 재시도 큐를 보존합니다. 기록 삭제 API는 없습니다. Restart my rhythm은 새 기본 리듬을 추가합니다. Hide depth history는 표시만 숨깁니다.
+
+Blob 저장량 및 작업 수는 Vercel 사용량에 포함됩니다. 서비스 한도나 저장 오류가 발생하면 저장 대기를 표시합니다.
