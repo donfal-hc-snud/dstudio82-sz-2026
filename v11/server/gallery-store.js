@@ -8,7 +8,7 @@ const options = { access: 'private', addRandomSuffix: false, contentType: 'appli
 export async function readJson(path) {
   const result = await get(path, { access: 'private', useCache: false });
   if (!result) return null;
-  return { value: await new Response(result.stream).json(), etag: result.blob.etag };
+  return { value: await new Response(result.stream).json(), etag: result.blob.etag.replace(/^W\//, '') };
 }
 
 export async function readGallery() {
