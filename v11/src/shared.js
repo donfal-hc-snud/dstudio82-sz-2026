@@ -1,6 +1,10 @@
 import { galleryLoop, emptyGallery } from './shared-model.js';
 
 const queueKey = 'rhythm-gallery-pending-v1';
+const validTrace = t => t && typeof t.id === 'string' && t.settings && typeof t.settings === 'object';
+// The server will never accept these, so retrying them would block every later save.
+const permanent = status => status >= 400 && status < 500 && status !== 408 && status !== 429;
+
 export class SharedGallery {
   constructor(loop, status, onRestore = () => {}) {
     this.loop = loop;
@@ -9,10 +13,15 @@ export class SharedGallery {
     this.gallery = emptyGallery();
     this.cache = new Map();
     this.ownedIds = new Set();
-    try { this.queue = JSON.parse(localStorage.getItem(queueKey) || '[]'); }
-    catch { this.queue = []; }
+    this.clockOffset = 0;
+    this.clockRtt = Infinity;
+    try {
+      const stored = JSON.parse(localStorage.getItem(queueKey) || '[]');
+      this.queue = Array.isArray(stored) ? stored.filter(validTrace) : [];
+    } catch { this.queue = []; }
     loop.onPublish = settings => this.publish(settings);
     this.timer = setInterval(() => this.sync(), 5000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.sync(); });
     this.sync();
   }
   remember() {
@@ -24,35 +33,76 @@ export class SharedGallery {
     this.loop.sharedTraceId = trace.id;
     this.queue.push(trace);
     this.remember();
-    this.sync();
+    if (this.busy) this.again = true;
+    else this.sync();
+  }
+  // Keep the lowest-latency sample: its server time is the most trustworthy.
+  clock(response, sent, received, cached) {
+    const serverTime = Number(response.headers.get('x-server-time'));
+    if (!Number.isFinite(serverTime) || serverTime <= 0) return;
+    const age = cached ? Number(response.headers.get('age')) || 0 : 0;
+    const rtt = received - sent;
+    this.clockRtt *= 1.05; // Let an old best sample expire slowly.
+    if (rtt > this.clockRtt) return;
+    this.clockRtt = rtt;
+    this.clockOffset = serverTime + age * 1000 + rtt / 2 - received;
   }
   accept(gallery) {
-    if (gallery.version !== 1 || gallery.sequence < this.gallery.sequence) return;
+    if (!gallery || gallery.version !== 1 || gallery.sequence < this.gallery.sequence) return;
     const firstRestore = this.gallery.sequence === 0 && gallery.sequence > 0;
     this.gallery = gallery;
     if (firstRestore) this.onRestore();
   }
+  async flush() {
+    while (this.queue.length) {
+      const trace = this.queue[0];
+      const sent = Date.now();
+      let response;
+      try {
+        response = await fetch('/api/traces', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(trace) });
+      } catch { throw new Error('Save pending · offline · retrying'); }
+      if (permanent(response.status)) {
+        // Drop a rejected trace instead of retrying it forever.
+        this.queue.shift();
+        this.remember();
+        this.ownedIds.delete(trace.id);
+        this.rejected = true;
+        continue;
+      }
+      if (!response.ok) throw new Error('Save pending · retrying');
+      this.clock(response, sent, Date.now(), false);
+      this.accept(await response.json());
+      this.queue.shift();
+      this.remember();
+    }
+  }
   async sync() {
     if (this.busy || document.hidden) return;
     this.busy = true;
+    let saveError = null;
     try {
-      while (this.queue.length) {
-        const response = await fetch('/api/traces', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.queue[0]) });
-        if (!response.ok) throw new Error('Save pending · retrying');
-        this.accept(await response.json());
-        this.queue.shift();
-        this.remember();
-      }
+      do {
+        this.again = false;
+        try { await this.flush(); } catch (error) { saveError = error; }
+      } while (this.again && !saveError);
+      // Always read the gallery, even while a save is still pending.
+      const sent = Date.now();
       const response = await fetch('/api/traces');
       if (!response.ok) throw new Error('Shared gallery offline · retrying');
+      this.clock(response, sent, Date.now(), true);
       this.accept(await response.json());
-      this.status(`Shared gallery · ${this.gallery.sequence} traces saved · 8 × 8 view`);
-    } catch (error) { this.status(error.message); }
-    finally { this.busy = false; }
+      const note = this.rejected ? ' · one invalid record skipped' : '';
+      this.status(saveError ? saveError.message : `Shared gallery · ${this.gallery.sequence} traces saved · 8 × 8 view${note}`);
+    } catch (error) { this.status(saveError ? saveError.message : error.message); }
+    finally {
+      this.busy = false;
+      // A trace published during the read is sent right away, not on the next tick.
+      if (this.again && !saveError) { this.again = false; setTimeout(() => this.sync(), 0); }
+    }
   }
   display(now) {
     // Keep a just-submitted curve visible while its durable write completes.
-    if (this.queue.length) return this.loop;
-    return galleryLoop(this.loop, this.gallery, now, this.ownedIds, this.cache);
+    if (this.queue.some(t => t.id === this.loop.sharedTraceId)) return this.loop;
+    return galleryLoop(this.loop, this.gallery, now, this.ownedIds, this.cache, this.clockOffset);
   }
 }
