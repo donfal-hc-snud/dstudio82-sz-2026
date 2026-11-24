@@ -51,8 +51,7 @@ export function setupOFControls(choose, selected) {
     };
   }
   const speaker = '<svg viewBox="0 0 32 28" aria-hidden="true"><path d="M5 11h4l5-4v14l-5-4H5z" fill="currentColor"/><g class="waves" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 9q5 5 0 10M22 6q8 8 0 16"/></g><path class="mute-cross" d="m19 10 8 8m0-8-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-  for (const id of ['jing', 'rhythm-audio']) document.getElementById(id).innerHTML = speaker;
-  document.getElementById('rhythm-audio').querySelector('svg').insertAdjacentHTML('beforeend', '<path d="M6 4v6m0-6 4-1" fill="none" stroke="currentColor"/><circle cx="4.5" cy="10" r="1.5" fill="currentColor"/>');
+  document.getElementById('jing').innerHTML = speaker;
   const volume = document.getElementById('volume');
   const fillVolume = () => volume.parentElement.style.setProperty('--fill', `${volume.value * 100}%`);
   volume.addEventListener('input', fillVolume);

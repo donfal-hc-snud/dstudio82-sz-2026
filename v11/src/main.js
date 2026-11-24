@@ -6,7 +6,7 @@ export const state={brightness:1,opacity:1/3,spread:200,softness:1,resolution:1/
 const loop=new Loop(now());let view,lastFigure=loop.figureId,lastRevision=loop.revision,frame=0,lastStats=0,held=new Set(),repeatAt=0,recordingText='',completeInk=null,completeTime=null,stopped=false;const labelCanvas=$('labels'),ink=labelCanvas.getContext('2d');
 const announce=(text,error=false)=>{$('input-status').textContent=text;$('input-status').classList.toggle('invalid',error);};
 let shared;
-const audio=new AudioEngine(loop,text=>announce(text,true));// Text entry and menus own the keyboard. Buttons and sliders never swallow the global shortcuts.
+const audio=new AudioEngine(t=>shared?.display(t)??loop,text=>announce(text,true));// Text entry and menus own the keyboard. Buttons and sliders never swallow the global shortcuts.
 const textEntry=el=>!!el&&(el.isContentEditable||el.tagName==='TEXTAREA'||el.tagName==='SELECT'||(el.tagName==='INPUT'&&!['range','button','checkbox','radio'].includes(el.type)));
 const blocked=()=>textEntry(document.activeElement);
 const shortcut=code=>['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(code);
@@ -31,8 +31,8 @@ function events(){
  $('camera-mode').onclick=()=>{state.ortho=!state.ortho;view.setProjection(state.ortho);$('camera-mode').querySelector('span').textContent=state.ortho?'ORTHOGRAPHIC':'PERSPECTIVE';};
  $('orthographic-export').onclick=()=>exportFile(false);$('perspective-export').onclick=()=>exportFile(true);
  $('ui-toggle').onclick=()=>{const hidden=document.body.classList.toggle('controls-hidden');$('ui-toggle').setAttribute('aria-expanded',!hidden);$('ui-toggle').textContent=hidden?'Show UI':'Hide UI';};
- $('audio-start').onclick=async()=>{try{$('audio-start').disabled=true;$('audio-start').textContent='Loading sounds…';await audio.unlock();$('audio-start').textContent='Sound enabled';$('audio-note').textContent='音 · Sound starts on the next loop boundary.';}catch(e){$('audio-start').textContent='Retry audio';announce(e.message,true);}finally{$('audio-start').disabled=false;}};
- for(const [id,key] of [['jing','jing'],['rhythm-audio','rhythm']])$(id).onclick=async()=>{audio[key]=!audio[key];$(id).setAttribute('aria-pressed',audio[key]);audio.updateGains();if(!audio.ctx){try{await audio.unlock();$('audio-start').textContent='Sound enabled';}catch(e){announce(e.message,true);}}};
+ $('audio-start').onclick=async()=>{try{$('audio-start').disabled=true;$('audio-start').textContent='Loading sounds…';await audio.unlock();$('audio-start').textContent='Sound enabled';$('audio-note').textContent='音 · The jing sounds with each new ripple.';}catch(e){$('audio-start').textContent='Retry audio';announce(e.message,true);}finally{$('audio-start').disabled=false;}};
+ for(const [id,key] of [['jing','jing']])$(id).onclick=async()=>{audio[key]=!audio[key];$(id).setAttribute('aria-pressed',audio[key]);audio.updateGains();if(!audio.ctx){try{await audio.unlock();$('audio-start').textContent='Sound enabled';}catch(e){announce(e.message,true);}}};
  $('volume').oninput=e=>{audio.volume=Number(e.target.value);audio.updateGains();};$('fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
  addEventListener('keydown',e=>{if(blocked())return;if(shortcut(e.code)){e.preventDefault();const el=document.activeElement;if(el instanceof HTMLElement&&el!==document.body)el.blur();}if(e.repeat)return;held.add(e.code);if(e.code==='Space')tap();if(e.code==='ArrowRight'||e.code==='ArrowLeft'){loop.stepMeter(e.code==='ArrowRight'?1:-1,now());repeatAt=now()+.45;}if(e.code==='ArrowUp')setInvert(true);if(e.code==='ArrowDown')setInvert(false);if(e.code==='KeyR')view.frameCamera(shared?.display(now())??loop,state,now());});addEventListener('keyup',e=>{held.delete(e.code);if(!blocked()&&e.code==='Space')e.preventDefault();});
  // A mouse click must not leave focus on a button: Space would press it again.
