@@ -1,7 +1,6 @@
 tests/
 test-results/
 releases/
-node_modules/
 .git/
 README.md
 run.sh
