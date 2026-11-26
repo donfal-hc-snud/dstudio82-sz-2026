@@ -1,4 +1,4 @@
-import { galleryLoop, emptyGallery } from './shared-model.js';
+import { galleryLoop, emptyGallery, appendTrace } from './shared-model.js';
 
 const queueKey = 'rhythm-gallery-pending-v1';
 const validTrace = t => t && typeof t.id === 'string' && t.settings && typeof t.settings === 'object';
@@ -28,7 +28,8 @@ export class SharedGallery {
     try { localStorage.setItem(queueKey, JSON.stringify(this.queue)); } catch { /* Retry in memory. */ }
   }
   publish(settings) {
-    const trace = { id: crypto.randomUUID(), settings: { ...settings } };
+    // createdAt is only used for the optimistic view; the server stamps its own time.
+    const trace = { id: crypto.randomUUID(), createdAt: Date.now() + this.clockOffset, settings: { ...settings } };
     this.ownedIds.add(trace.id);
     this.loop.sharedTraceId = trace.id;
     this.queue.push(trace);
@@ -100,9 +101,19 @@ export class SharedGallery {
       if (this.again && !saveError) { this.again = false; setTimeout(() => this.sync(), 0); }
     }
   }
+  // The shared gallery plus this visitor's unsaved traces, as the server will store them.
+  // Showing it while a save is pending keeps the same scene before and after the save,
+  // instead of switching to the local-only loop and back.
+  optimistic() {
+    if (!this.queue.length) return this.gallery;
+    const key = `${this.gallery.sequence}|${this.queue.map(t => t.id).join(',')}`;
+    if (this.optimisticKey !== key) {
+      this.optimisticKey = key;
+      this.optimisticGallery = this.queue.reduce((g, t) => appendTrace(g, { ...t, createdAt: t.createdAt ?? Date.now() + this.clockOffset }), this.gallery);
+    }
+    return this.optimisticGallery;
+  }
   display(now) {
-    // Keep a just-submitted curve visible while its durable write completes.
-    if (this.queue.some(t => t.id === this.loop.sharedTraceId)) return this.loop;
-    return galleryLoop(this.loop, this.gallery, now, this.ownedIds, this.cache, this.clockOffset);
+    return galleryLoop(this.loop, this.optimistic(), now, this.ownedIds, this.cache, this.clockOffset);
   }
 }

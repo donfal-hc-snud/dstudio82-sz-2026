@@ -80,3 +80,25 @@ test('stored rhythms are normalised and still validated', () => {
   assert.equal(normalizeRhythm('', 6), '');
   assert.throws(() => normalizeRhythm('7 5', 6));
 });
+
+test('a pending save is shown in the shared scene, not a local-only view', async () => {
+  globalThis.document ??= { hidden: true, addEventListener() {} };
+  globalThis.localStorage ??= { getItem: () => null, setItem() {} };
+  const { SharedGallery } = await import('../src/shared.js');
+  const loop = new Loop(0);
+  const shared = new SharedGallery(loop, () => {});
+  clearInterval(shared.timer);
+  shared.gallery = appendTrace(appendTrace(emptyGallery(), { id: 'a', createdAt: 0, settings: { meter: 2, rhythm: '', helix: false, startRight: true } }),
+    { id: 'b', createdAt: 0, settings: { meter: 9, rhythm: '', helix: false, startRight: true } });
+  shared.busy = true; // keep the save pending
+  shared.publish({ ...loop.active.settings });
+  const pending = shared.display(1);
+  assert.notEqual(pending, loop);
+  assert.equal(pending.figures.length + 1, 3);
+  assert.equal(pending.epoch, loop.epoch);
+  // The confirmed index is the same scene: same front figure, revision and clock.
+  shared.gallery = appendTrace(shared.gallery, { ...shared.queue[0], createdAt: 5 });
+  shared.queue = [];
+  const saved = shared.display(1);
+  assert.deepEqual([saved.figureId, saved.revision, saved.figures.length, saved.epoch], [pending.figureId, pending.revision, pending.figures.length, pending.epoch]);
+});
