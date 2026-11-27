@@ -1,0 +1,6 @@
+tests/
+test-results/
+releases/
+.git/
+README.md
+run.sh

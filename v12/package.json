@@ -1,0 +1,22 @@
+{
+  "name": "rhythmic-visual-v12-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/model.test.mjs tests/shared.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:stress": "node tests/stress-browser.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.9.0"
+  },
+  "overrides": {
+    "zod": "^4.6.6"
+  }
+}

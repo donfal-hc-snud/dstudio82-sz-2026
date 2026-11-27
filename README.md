@@ -1,10 +1,10 @@
-# RhythmicVisual v11 — Web
+# RhythmicVisual — Web
 
-최종 v11의 HTML / Three.js 웹 버전은 [`v11/`](./v11/)에 있습니다. 기존 openFrameworks Spiral Trails 소스는 보존했습니다.
+현재 배포 중인 웹 버전은 [`v12/`](./v12/)입니다. 최종 v11의 HTML / Three.js 웹 포트는 [`v11/`](./v11/)에 보존합니다. 기존 openFrameworks Spiral Trails 소스도 보존했습니다.
 
-Vercel 프로젝트 이름: `rhythm-visualiser` · Root Directory: `v11` · Build: `npm run build` · Output: `dist`.
+Vercel 프로젝트 이름: `rhythm-visualiser` · Root Directory: `v12` · Build: `npm run build` · Output: `dist`.
 
-로컬 실행과 기능·검증 내용은 [v11 안내](./v11/README.md)를 확인하세요.
+로컬 실행과 기능·검증 내용은 [v12 안내](./v12/README.md)를 확인하세요.
 
 ---
 
